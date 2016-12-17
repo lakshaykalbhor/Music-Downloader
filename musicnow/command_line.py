@@ -3,6 +3,7 @@
 from . import repair
 from . import log
 
+import sys
 import argparse
 from os import system, rename, listdir, curdir, name
 from os.path import basename
@@ -50,9 +51,12 @@ def get_url(song_input, auto):
 
         elif auto:
         	print(song_title)
-        	return list(youtube_list.values())[0], list(youtube_list.keys())[0] 
+        	return list(youtube_list.values())[0], list(youtube_list.keys())[0]
 
-
+    # Checks if YouTube search return no results
+    if youtube_list == {}:
+        print("No match found!")
+        sys.exit()
 
     # Gets the demanded song title and url
     song_url, song_title = prompt(youtube_list)
@@ -63,18 +67,23 @@ def get_url(song_input, auto):
 
 def prompt(youtube_list):
 
-    x = int(input('\nEnter song number > '))
-    x = x - 1
-    song_url = list(youtube_list.values())[x]
-    song_title = list(youtube_list.keys())[x]
+    while True:
+        option = int(input('\nEnter song number > '))
+        try:
+            song_url = list(youtube_list.values())[option - 1]
+            song_title = list(youtube_list.keys())[option - 1]
+            break
+        except IndexError:
+            pass
+
     system('clear')
     print('Download Song: ')
     print(song_title)
     print('Y/N?')
-    x = input('>')
-    if x == 'Y' or x == 'y':
+    confirm = input('>')
+    if confirm == 'Y' or confirm == 'y':
         pass
-    elif x == 'N' or x == 'n':
+    elif confirm == 'N' or confirm == 'n':
         exit()
     else:
         log.log_error('Invalid Input')
@@ -122,14 +131,14 @@ def download_song(song_url, song_title):
 
 def main():
     system('clear')
-    
+
     parser = argparse.ArgumentParser(description='Download songs with album art and metadata!')
     parser.add_argument('-m', '--multiple', action='store', dest='multiple_file', help='Download multiple songs from a text file list')
     parser.add_argument('-a', '--auto', action='store_true', help='Automatically chooses top result')
     args = parser.parse_args()
     arg_multiple = args.multiple_file or None
     arg_auto = args.auto or None
-    
+
     if arg_multiple:
     	with open(arg_multiple, "r") as f:
     		file_names = []
@@ -142,7 +151,7 @@ def main():
     		system('clear')
     		repair.fix_music(file_name + '.mp3')
 
- 
+
     else:
         query = input('Enter Song Name : ')
         song_url, file_name = get_url(query, arg_auto)  # Gets YT url
