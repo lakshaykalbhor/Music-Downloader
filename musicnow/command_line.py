@@ -38,20 +38,20 @@ elif six.PY3:
     from urllib.request import urlopen
 
 YOUTUBECLASS = 'spf-prefetch'
+clear = 'clear' if name != 'nt' else 'cls'
 
 def setup():
     """
     Gathers all configs
     """
 
-    global CONFIG, BING_KEY, GENIUS_KEY, config_path, LOG_FILENAME, LOG_LINE_SEPERATOR 
+    global CONFIG, BING_KEY, GENIUS_KEY, config_path, LOG_FILENAME, LOG_LINE_SEPERATOR
 
     LOG_FILENAME = 'musicrepair_log.txt'
     LOG_LINE_SEPERATOR = '........................\n'
 
     CONFIG = configparser.ConfigParser()
-    config_path = realpath(__file__).replace(basename(__file__),'')
-    config_path = config_path + 'config.ini'
+    config_path = realpath(__file__).replace(basename(__file__), 'config.ini')
     CONFIG.read(config_path)
 
     GENIUS_KEY = CONFIG['keys']['genius_key']
@@ -62,6 +62,7 @@ def setup():
 
     if BING_KEY == '<insert bing key here>':
         log.log_error('Warning, you are missing the Bing key. Add it using --config')
+
 
 def add_config():
     """
@@ -80,31 +81,27 @@ def add_config():
 
 
 def get_tracks_from_album(album_name):
-    '''
+    """
     Gets tracks from an album using Spotify's API
-    '''
+    """
 
     spotify = spotipy.Spotify()
 
     album = spotify.search(q='album:' + album_name, limit=1)
     album_id = album['tracks']['items'][0]['album']['id']
-    results = spotify.album_tracks(album_id=str(album_id))
-    songs = []
-    for items in results['items']:
-        songs.append(items['name'])
-
-    return songs
+    results = spotify.album_tracks(album_id=album_id)
+    return [item['name'] for item in results['items']]  # Songs
 
 
 def get_url(song_input, auto):
-    '''
+    """
     Provides user with a list of songs to choose from
     returns the url of chosen song.
-    '''
+    """
     youtube_list = OrderedDict()
     num = 0  # List of songs index
 
-    html = requests.get("https://www.youtube.com/results",
+    html = requests.get('https://www.youtube.com/results',
                         params={'search_query': song_input})
     soup = BeautifulSoup(html.text, 'html.parser')
 
@@ -117,8 +114,8 @@ def get_url(song_input, auto):
         youtube_list.update({song_title: song_url})
 
         if not auto:
-            print('(%s) %s' % (str(num + 1), song_title))  # Prints list
-            num = num + 1
+            num += 1
+            print("({0}) {1}".format(num, song_title))  # Prints list
 
         elif auto:
             print(song_title)
@@ -129,18 +126,22 @@ def get_url(song_input, auto):
         log.log_error('No match found!')
         exit()
 
-    # Gets the demanded song title and url
-    song_url, song_title = prompt(youtube_list)
-
-    return song_url, song_title  # Returns Name of Song and URL of Music Video
+    # Gets and returns the demanded song url and title and url
+    return prompt(youtube_list)
 
 
 def prompt(youtube_list):
-    '''
+    """
     Prompts for song number from list of songs
-    '''
+    """
 
-    option = int(input('\nEnter song number > '))
+    option = 0
+    while not option:
+        try:
+            option = int(input('\nEnter song number > '))
+        except ValueError:
+            print('Value entered not a number. Try again.')
+
     try:
         song_url = list(youtube_list.values())[option - 1]
         song_title = list(youtube_list.keys())[option - 1]
@@ -148,12 +149,12 @@ def prompt(youtube_list):
         log.log_error('Invalid Input')
         exit()
 
-    system('clear')
+    system(clear)
     print('Download Song: ')
     print(song_title)
-    print('Y/n?')
-    confirm = input('>')
-    if confirm == '' or confirm.lower() == 'y':
+    print('Y/N?')
+    confirm = input('> ')
+    if not confirm or confirm.lower() == 'y':
         pass
     elif confirm.lower() == 'n':
         exit()
@@ -165,9 +166,9 @@ def prompt(youtube_list):
 
 
 def download_song(song_url, song_title):
-    '''
+    """
     Downloads song from youtube-dl
-    '''
+    """
     outtmpl = song_title + '.%(ext)s'
     ydl_opts = {
         'format': 'bestaudio/best',
@@ -187,11 +188,13 @@ def download_song(song_url, song_title):
 
 
 def main():
-    '''
+    """
     Starts here, handles arguments
-    '''
+    """
 
-    system('clear') # Must be system('cls') for windows
+    global clear
+
+    system(clear)
 
     setup()
 
@@ -200,23 +203,26 @@ def main():
     parser.add_argument('-c', '--config', action='store_true',
                         help='Set your API keys')
     parser.add_argument('-m', '--multiple', action='store', dest='multiple_file',
-                        help='Download multiple songs from a text file list')
+                        help='Download multiple songs from a text file list. \
+                        Tip: write song and artist in the same line')
     parser.add_argument('-a', '--auto', action='store_true',
                         help='Automatically chooses top result')
     parser.add_argument('--album', action='store_true',
                         help='Downloads all songs from an album')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='Activate verbose output (no console clears)')
     args = parser.parse_args()
     arg_multiple = args.multiple_file or None
     arg_auto = args.auto or None
     arg_album = args.album or None
     arg_config = args.config
-
+    clear = '' if args.verbose else clear
 
     if arg_config:
         add_config()
 
     elif arg_multiple and arg_album:
-        log.log_error("Can't do both!")
+        log.log_error('Incompatible options "multiple" and "album!"')
 
     elif arg_album:
         album_name = input('Enter album name : ')
@@ -228,7 +234,7 @@ def main():
                 '\nAre these the songs you want to download? (Y/n)\n> ')
 
         except IndexError:
-            log.log_error("Couldn't find album")
+            log.log_error('Couldn\'t find album')
             exit()
 
         if confirm == '' or confirm.lower() == ('y'):
@@ -236,36 +242,35 @@ def main():
                 track_name = track_name + ' song'
                 song_url, file_name = get_url(track_name, arg_auto)
                 download_song(song_url, file_name)
-                system('clear')
+                system(clear)
                 repair.fix_music(file_name + '.mp3')
 
         elif confirm.lower() == 'n':
-            log.log_error("Sorry, if appropriate results weren't found")
+            log.log_error('Sorry if appropriate results weren\'t found')
             exit()
         else:
             log.log_error('Invalid Input')
             exit()
 
     elif arg_multiple:
-        with open(arg_multiple, "r") as f:
-            file_names = []
-            for line in f:
-                file_names.append(line.rstrip('\n'))
+        with open(arg_multiple, 'r') as f:
+            file_names = [line.strip() for line in f.readlines() if line.strip()]
 
         for files in file_names:
-            files = files + ' song'
+            files += ' song'
             song_url, file_name = get_url(files, arg_auto)
             download_song(song_url, file_name)
-            system('clear')
-            repair.fix_music(file_name + '.mp3')
+            system(clear)
+            repair.fix_music("{}.mp3".format(file_name))
 
     else:
-        query = input('Enter Song Name : ')
+        query = input('Enter Song Information: ')
         song_url, file_name = get_url(query, arg_auto)  # Gets YT url
         download_song(song_url, file_name)  # Saves as .mp3 file
-        system('clear')
+        system(clear)
         repair.fix_music(file_name + '.mp3')
 
 
 if __name__ == '__main__':
-    main() 
+    main()
+

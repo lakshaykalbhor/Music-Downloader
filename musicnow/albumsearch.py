@@ -26,7 +26,7 @@ def setup():
     Gathers all configs
     """
 
-    global CONFIG, BING_KEY, GENIUS_KEY, config_path, LOG_FILENAME, LOG_LINE_SEPERATOR 
+    global CONFIG, BING_KEY, GENIUS_KEY, config_path, LOG_FILENAME, LOG_LINE_SEPERATOR
 
     LOG_FILENAME = 'musicrepair_log.txt'
     LOG_LINE_SEPERATOR = '........................\n'
@@ -63,7 +63,7 @@ def img_search_bing(album):
             key = key + 1
 
         return links_dict["0"]
-        
+
     except KeyError:
         return None
 
@@ -87,6 +87,6 @@ def img_search_google(album):
 
     albumart_div = soup.find("div", {"class": "rg_meta"})
     albumart = json.loads(albumart_div.text)["ou"]
-    
+
     return albumart
 

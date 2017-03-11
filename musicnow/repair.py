@@ -44,7 +44,7 @@ def setup():
     Gathers all configs
     """
 
-    global CONFIG, BING_KEY, GENIUS_KEY, config_path, LOG_FILENAME, LOG_LINE_SEPERATOR 
+    global CONFIG, BING_KEY, GENIUS_KEY, config_path, LOG_FILENAME, LOG_LINE_SEPERATOR
 
     LOG_FILENAME = 'musicrepair_log.txt'
     LOG_LINE_SEPERATOR = '........................\n'
@@ -126,7 +126,7 @@ def get_lyrics_genius(song_title):
     soup = BeautifulSoup(page.text, "html.parser")
     div = soup.find('div',{'class': 'song_body-lyrics'})
     lyrics = div.find('p').getText()
-  
+
     return lyrics
 
 
