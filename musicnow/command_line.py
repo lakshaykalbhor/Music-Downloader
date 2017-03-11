@@ -18,7 +18,7 @@ import spotipy
 import six
 
 from os import system, rename, listdir, curdir, name
-from os.path import basename, realpath
+from os.path import basename, exists, realpath
 from collections import OrderedDict
 from bs4 import BeautifulSoup
 
@@ -58,10 +58,10 @@ def setup():
     BING_KEY = CONFIG['keys']['bing_key']
 
     if GENIUS_KEY == '<insert genius key here>':
-        log.log_error('Warning, you are missing the Genius key. Add it using --config')
+        log.log_warn('Warning, you are missing the Genius key. Add it using --config')
 
     if BING_KEY == '<insert bing key here>':
-        log.log_error('Warning, you are missing the Bing key. Add it using --config')
+        log.log_warn('Warning, you are missing the Bing key. Add it using --config')
 
 
 def add_config():
@@ -186,6 +186,15 @@ def download_song(song_url, song_title):
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(song_url, download=True)
 
+def music_now(query, auto):
+    """
+    Finds the YouTube URL of the queried song, downloads
+    it as MP3 file and adds the appropriate tags.
+    """
+    song_url, file_name = get_url(query, auto)
+    download_song(song_url, file_name)
+    system(clear)
+    repair.fix_music(file_name + '.mp3')
 
 def main():
     """
@@ -240,10 +249,7 @@ def main():
         if confirm == '' or confirm.lower() == ('y'):
             for track_name in tracks:
                 track_name = track_name + ' song'
-                song_url, file_name = get_url(track_name, arg_auto)
-                download_song(song_url, file_name)
-                system(clear)
-                repair.fix_music(file_name + '.mp3')
+                music_now(track_name, arg_auto)
 
         elif confirm.lower() == 'n':
             log.log_error('Sorry if appropriate results weren\'t found')
@@ -253,22 +259,21 @@ def main():
             exit()
 
     elif arg_multiple:
+        if not exists(arg_multiple):
+            log.log_error('Requested file for multiple download "{}" ' \
+                          'not found'.format(arg_multiple))
+            exit()
+
         with open(arg_multiple, 'r') as f:
-            file_names = [line.strip() for line in f.readlines() if line.strip()]
+            file_names = [line.strip() for line in f if line.strip()]
 
         for files in file_names:
             files += ' song'
-            song_url, file_name = get_url(files, arg_auto)
-            download_song(song_url, file_name)
-            system(clear)
-            repair.fix_music("{}.mp3".format(file_name))
+            music_now(files, arg_auto)
 
     else:
         query = input('Enter Song Information: ')
-        song_url, file_name = get_url(query, arg_auto)  # Gets YT url
-        download_song(song_url, file_name)  # Saves as .mp3 file
-        system(clear)
-        repair.fix_music(file_name + '.mp3')
+        music_now(query, arg_auto)
 
 
 if __name__ == '__main__':
