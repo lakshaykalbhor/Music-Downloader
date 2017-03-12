@@ -10,58 +10,28 @@ r"""
 """
 
 import argparse
-import configparser
-import re
 import requests
-import youtube_dl
-import spotipy
 import six
+import spotipy
+import youtube_dl
 
-from os import system, rename, listdir, curdir, name
-from os.path import basename, exists, realpath
+from os import name, system
+from os.path import exists
 from collections import OrderedDict
-from bs4 import BeautifulSoup
-
-try:
-    from . import repair
-    from . import log
-except:
-    import repair
-    import log
 
 if six.PY2:
-    from urllib2 import urlopen
-    from urllib2 import quote
+    import BeautifulSoup
     input = raw_input
 elif six.PY3:
-    from urllib.parse import quote
-    from urllib.request import urlopen
+    from bs4 import BeautifulSoup
+
+# Project specific inputs
+import repair
+import log
+from utils import *
 
 YOUTUBECLASS = 'spf-prefetch'
 clear = 'clear' if name != 'nt' else 'cls'
-
-def setup():
-    """
-    Gathers all configs
-    """
-
-    global CONFIG, BING_KEY, GENIUS_KEY, config_path, LOG_FILENAME, LOG_LINE_SEPERATOR
-
-    LOG_FILENAME = 'musicrepair_log.txt'
-    LOG_LINE_SEPERATOR = '........................\n'
-
-    CONFIG = configparser.ConfigParser()
-    config_path = realpath(__file__).replace(basename(__file__), 'config.ini')
-    CONFIG.read(config_path)
-
-    GENIUS_KEY = CONFIG['keys']['genius_key']
-    BING_KEY = CONFIG['keys']['bing_key']
-
-    if GENIUS_KEY == '<insert genius key here>':
-        log.log_warn('Warning, you are missing the Genius key. Add it using --config')
-
-    if BING_KEY == '<insert bing key here>':
-        log.log_warn('Warning, you are missing the Bing key. Add it using --config')
 
 
 def add_config():
@@ -113,17 +83,15 @@ def get_url(song_input, auto):
         # Adds title and song url to dictionary
         youtube_list.update({song_title: song_url})
 
-        if not auto:
-            num += 1
-            print("({0}) {1}".format(num, song_title))  # Prints list
-
-        elif auto:
+        if auto:
             print(song_title)
             return list(youtube_list.values())[0], list(youtube_list.keys())[0]
 
-    # Checks if YouTube search return no results
-    if youtube_list == {}:
-        log.log_error('No match found!')
+        num += 1
+        print("({0}) {1}".format(num, song_title))  # Prints list
+
+    if not youtube_list:
+        log.log_error('No match found on YouTube, try refining your search!')
         exit()
 
     # Gets and returns the demanded song url and title and url
@@ -186,6 +154,7 @@ def download_song(song_url, song_title):
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(song_url, download=True)
 
+
 def music_now(query, auto):
     """
     Finds the YouTube URL of the queried song, downloads
@@ -195,6 +164,7 @@ def music_now(query, auto):
     download_song(song_url, file_name)
     system(clear)
     repair.fix_music(file_name + '.mp3')
+
 
 def main():
     """

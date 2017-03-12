@@ -1,17 +1,20 @@
+#!/usr/bin/env python
+
 import re
 from os.path import splitext
 
 
 def songname(song_name):
-    '''
+    """
     Improves file name by removing crap words
-    '''
+    """
+
     try:
         song_name = splitext(song_name)[0]
     except IndexError:
         pass
 
-    # Words to omit from song title for better results through spotify's API
+    # Words to omit from song title for better results through Spotify's API
     chars_filter = "()[]{}-:_/=+\"\'"
     words_filter = ('official', 'lyrics', 'audio', 'remixed', 'remix', 'video',
                     'full', 'version', 'music', 'mp3', 'hd', 'hq', 'uploaded')
@@ -24,5 +27,6 @@ def songname(song_name):
                        "", song_name, flags=re.IGNORECASE)
 
     # Remove duplicate spaces
-    song_name = re.sub(' +', ' ', song_name)
+    song_name = ' '.join(song_name.split())
+
     return song_name.strip()
