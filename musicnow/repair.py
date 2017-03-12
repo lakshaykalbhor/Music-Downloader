@@ -121,7 +121,7 @@ def get_details_spotify(song_name):
 
     except IndexError:
         log.log_error(
-            '* Could not find metadata from spotify, trying something else.',
+            '* Could not find metadata from Spotify, trying something else.',
             indented=True)
         return None
 

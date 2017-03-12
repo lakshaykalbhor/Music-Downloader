@@ -57,10 +57,12 @@ def get_tracks_from_album(album_name):
 
     spotify = spotipy.Spotify()
 
-    album = spotify.search(q='album:' + album_name, limit=1)
-    album_id = album['tracks']['items'][0]['album']['id']
-    results = spotify.album_tracks(album_id=album_id)
-    return [item['name'] for item in results['items']]  # Songs
+    result = spotify.search(q='album:' + album_name, limit=1)
+    result = result['tracks']['items'][0]['album']
+    album, album_id, artist = result['name'], result['id'], result['artists'][0]['name']
+    result = spotify.album_tracks(album_id=album_id)
+    songs = [item['name'] for item in result['items']]
+    return songs, album, artist
 
 
 def get_url(song_input, auto):
@@ -160,6 +162,7 @@ def music_now(query, auto):
     Finds the YouTube URL of the queried song, downloads
     it as MP3 file and adds the appropriate tags.
     """
+
     song_url, file_name = get_url(query, auto)
     download_song(song_url, file_name)
     system(clear)
@@ -204,25 +207,25 @@ def main():
         log.log_error('Incompatible options "multiple" and "album!"')
 
     elif arg_album:
-        album_name = input('Enter album name : ')
+        album_name = input('Enter album information (name and artist): ')
         try:
-            tracks = get_tracks_from_album(album_name)
-            for songs in tracks:
-                print(songs)
+            tracks, album, artist = get_tracks_from_album(album_name)
+            print("\nArtist: {}\nAlbum: {}\nSongs:\n\t{}".format(
+                  artist, album, '\n\t'.join(tracks)))
             confirm = input(
-                '\nAre these the songs you want to download? (Y/n)\n> ')
+                '\nAre these the songs you want to download? (Y/N)\n> ')
 
         except IndexError:
             log.log_error('Couldn\'t find album')
             exit()
 
-        if confirm == '' or confirm.lower() == ('y'):
+        if not confirm or confirm.lower() == ('y'):
             for track_name in tracks:
-                track_name = track_name + ' song'
-                music_now(track_name, arg_auto)
+                music_now("{} {}".format(track_name, artist), arg_auto)
 
         elif confirm.lower() == 'n':
-            log.log_error('Sorry if appropriate results weren\'t found')
+            log.log_error('Sorry if appropriate results weren\'t found.' \
+                          'Try adding more album information such as artist.')
             exit()
         else:
             log.log_error('Invalid Input')
