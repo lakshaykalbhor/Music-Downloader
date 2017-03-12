@@ -70,6 +70,7 @@ def get_url(song_input, auto):
     Provides user with a list of songs to choose from
     returns the url of chosen song.
     """
+
     youtube_list = OrderedDict()
     num = 0  # List of songs index
 
@@ -78,11 +79,10 @@ def get_url(song_input, auto):
     soup = BeautifulSoup(html.text, 'html.parser')
 
     # In all Youtube Search Results
-
     for i in soup.findAll('a', {'rel': YOUTUBECLASS}):
         song_url = 'https://www.youtube.com' + (i.get('href'))
-        song_title = (i.get('title'))
-        # Adds title and song url to dictionary
+        song_title = i.get('title')
+        # Add title and song url to dictionary
         youtube_list.update({song_title: song_url})
 
         if auto:
@@ -176,10 +176,6 @@ def main():
 
     global clear
 
-    system(clear)
-
-    setup()
-
     parser = argparse.ArgumentParser(
         description='Download songs with album art and metadata!')
     parser.add_argument('-c', '--config', action='store_true',
@@ -199,6 +195,10 @@ def main():
     arg_album = args.album or None
     arg_config = args.config
     clear = '' if args.verbose else clear
+
+    system(clear)
+
+    setup()
 
     if arg_config:
         add_config()
@@ -241,7 +241,6 @@ def main():
             file_names = [line.strip() for line in f if line.strip()]
 
         for files in file_names:
-            files += ' song'
             music_now(files, arg_auto)
 
     else:
