@@ -5,6 +5,7 @@ Return Album Art url
 import json
 import requests
 import six
+import spotipy
 
 from os.path import realpath, basename
 
@@ -20,12 +21,14 @@ elif six.PY3:
 import log
 from utils import *
 
-def img_search_bing(album):
+def img_bing(album):
     """
     Bing image search
     """
 
     setup()
+
+    log.log_indented('* Trying to extract album art from Bing')
 
     album += " Album Art"
 
@@ -50,10 +53,12 @@ def img_search_bing(album):
     except KeyError:
         return None
 
-def img_search_google(album):
+def img_google(album):
     """
     Google image search
     """
+
+    log.log_indented('* Trying to extract album art from Google')
 
     album += " Album Art"
     url = ("https://www.google.com/search?q=" +
@@ -70,4 +75,14 @@ def img_search_google(album):
     albumart = json.loads(albumart_div.text)["ou"]
 
     return albumart
+
+def img_spotify(query):
+    log.log_indented('* Trying to extract album art from Spotify')
+    spotify = spotipy.Spotify()
+
+    album = spotify.search(q='album:' + query, limit=1)
+    return album['tracks']['items'][0]['album']['images'][0]['url']
+
+def img_search(query):
+    return img_spotify(query) or img_google(query) or img_bing(query)
 

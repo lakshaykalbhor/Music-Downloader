@@ -279,12 +279,8 @@ def fix_music(file_name):
         artist, album, song_name, lyrics, match_bool, score = get_details_letssingit(
             file_name)  # Use bad scraping method as last resort
 
-    try:
-        log.log_indented('* Trying to extract album art from Google.com')
-        albumart = albumsearch.img_search_google(artist+' '+album)
-    except Exception:
-        log.log_indented('* Trying to extract album art from Bing.com')
-        albumart = albumsearch.img_search_bing(artist+' '+album)
+
+    albumart = albumsearch.img_search("{} {}".format(artist, album))
 
     if match_bool:
         add_albumart(albumart, file_name)
