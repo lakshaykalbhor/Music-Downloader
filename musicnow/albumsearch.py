@@ -1,50 +1,36 @@
-'''
+"""
 Return Album Art url
-'''
-try:
-    from . import log
-except:
-    import log
+"""
 
-import requests
 import json
-from bs4 import BeautifulSoup
+import requests
 import six
-from os import environ
+import spotipy
+
 from os.path import realpath, basename
 
 if six.PY2:
-    from urllib2 import urlopen, Request
-    from urllib2 import quote
+    import BeautifulSoup
+    from urllib2 import quote, Request, urlopen
 elif six.PY3:
+    from bs4 import BeautifulSoup
     from urllib.parse import quote
-    from urllib.request import urlopen, Request
+    from urllib.request import Request, urlopen
 
+# Project specific inputs
+import log
+from utils import *
 
-def setup():
+def img_bing(album):
     """
-    Gathers all configs
+    Bing image search
     """
-
-    global CONFIG, BING_KEY, GENIUS_KEY, config_path, LOG_FILENAME, LOG_LINE_SEPERATOR 
-
-    LOG_FILENAME = 'musicrepair_log.txt'
-    LOG_LINE_SEPERATOR = '........................\n'
-
-    CONFIG = configparser.ConfigParser()
-    config_path = realpath(__file__).replace(basename(__file__),'')
-    config_path = config_path + 'config.ini'
-    CONFIG.read(config_path)
-
-    BING_KEY = CONFIG['keys']['bing_key']
-
-
-def img_search_bing(album):
-    ''' Bing image search '''
 
     setup()
 
-    album = album + " Album Art"
+    log.log_indented('* Trying to extract album art from Bing')
+
+    album += " Album Art"
 
     api_key = "Key"
     endpoint = "https://api.cognitive.microsoft.com/bing/v5.0/images/search"
@@ -63,16 +49,18 @@ def img_search_bing(album):
             key = key + 1
 
         return links_dict["0"]
-        
+
     except KeyError:
         return None
 
-def img_search_google(album):
-    '''
-    google image search
-    '''
+def img_google(album):
+    """
+    Google image search
+    """
 
-    album = album + " Album Art"
+    log.log_indented('* Trying to extract album art from Google')
+
+    album += " Album Art"
     url = ("https://www.google.com/search?q=" +
            quote(album.encode('utf-8')) + "&source=lnms&tbm=isch")
     header = {'User-Agent':
@@ -81,12 +69,20 @@ def img_search_google(album):
               Chrome/43.0.2357.134 Safari/537.36'''
              }
 
-
-
     soup = BeautifulSoup(urlopen(Request(url, headers=header)), "html.parser")
 
     albumart_div = soup.find("div", {"class": "rg_meta"})
     albumart = json.loads(albumart_div.text)["ou"]
-    
+
     return albumart
+
+def img_spotify(query):
+    log.log_indented('* Trying to extract album art from Spotify')
+    spotify = spotipy.Spotify()
+
+    album = spotify.search(q='album:' + query, limit=1)
+    return album['tracks']['items'][0]['album']['images'][0]['url']
+
+def img_search(query):
+    return img_spotify(query) or img_google(query) or img_bing(query)
 

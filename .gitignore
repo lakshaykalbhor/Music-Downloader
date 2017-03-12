@@ -90,6 +90,8 @@ ENV/
 # Rope project settings
 .ropeproject
 
-# Trash.
+# Trash
 .DS_Store
 
+# MP3
+*.mp3
