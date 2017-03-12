@@ -9,13 +9,10 @@ def songname(song_name):
     Improves file name by removing crap words
     """
 
-    try:
-        song_name = splitext(song_name)[0]
-    except IndexError:
-        pass
+    song_name = splitext(song_name)[0]
 
     # Words to omit from song title for better results through Spotify's API
-    chars_filter = "()[]{}-:_/=+\"\'"
+    chars_filter = "()[]{}-:_/=+\""
     words_filter = ('official', 'lyrics', 'audio', 'remixed', 'remix', 'video',
                     'full', 'version', 'music', 'mp3', 'hd', 'hq', 'uploaded')
 
