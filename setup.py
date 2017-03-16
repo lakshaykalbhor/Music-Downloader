@@ -18,6 +18,7 @@ setup(name='musicnow',
           'colorama',
           'argparse',
           'configparser',
+          'BeautifulSoup',
         ],
       entry_points={
         'console_scripts': ['musicnow=musicnow.command_line:main'],
